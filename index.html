@@ -717,10 +717,10 @@ function applyFilters() {
   const start = new Date(ai, mi-1, 1);
   const end   = new Date(af, mf, 0); // last day of mesFim
 
+  // filteredData = apenas movimentações (adm ou dem) dentro do período
   filteredData = rawData.filter(r => {
     const adm = parseDate(r.dtadmissao);
     const dem = parseDate(r.dtdemissao);
-    // include if admitted in range OR dismissed in range
     const admInRange = adm && adm >= start && adm <= end;
     const demInRange = dem && dem >= start && dem <= end;
     return admInRange || demInRange;
@@ -732,9 +732,11 @@ function applyFilters() {
 
 // ── PAGE 1 ──
 function renderPage1() {
+  // Ativos = todos com status Ativo no rawData completo (independente do período)
   const ativos    = rawData.filter(r => r.status && r.status.toLowerCase().includes('ativ')).length;
-  const admissoes = filteredData.filter(r => { const d = parseDate(r.dtadmissao); return d && inRange(d); }).length;
-  const demissoes = filteredData.filter(r => { const d = parseDate(r.dtdemissao); return d && inRange(d); }).length;
+  // Admissões e demissões apenas dentro do período filtrado
+  const admissoes = rawData.filter(r => { const d = parseDate(r.dtadmissao); return d && inRange(d); }).length;
+  const demissoes = rawData.filter(r => { const d = parseDate(r.dtdemissao); return d && inRange(d); }).length;
   const turnover  = ativos > 0 ? ((demissoes + admissoes)/2 / ativos * 100).toFixed(2) : 0;
 
   document.getElementById('kpiAtivos').textContent    = ativos;
