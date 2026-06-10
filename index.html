@@ -620,25 +620,32 @@ function buildSelects() {
 }
 
 // ── LOAD DATA FROM GOOGLE SHEETS (CSV) ──
+const CSV_PUB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfdQjAmURdHyg_zgZY5kb93-yxaD4lndfxTmDadGgLQNQc5qZOs31YhXOH5KQ2TLFistW7dFbjV6Cc/pub?gid=1225630194&single=true&output=csv';
+
 async function loadData() {
   setStatus('Carregando dados…', false);
-  if (SHEET_ID === 'SEU_SHEET_ID_AQUI') {
-    setStatus('⚠ Configure o SHEET_ID no código.', false);
-    loadDemo();
-    return;
+  const urls = [
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`,
+    CSV_PUB_URL
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const txt = await res.text();
+      if (!txt || txt.trim().length < 10) continue;
+      const parsed = parseCSV(txt);
+      if (parsed.length > 0) {
+        rawData = parsed;
+        setStatus(`✓ ${rawData.length} registros carregados.`, true);
+        populatePage2Filters();
+        applyFilters();
+        return;
+      }
+    } catch(e) { continue; }
   }
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
-    const res  = await fetch(url);
-    const txt  = await res.text();
-    rawData = parseCSV(txt);
-    setStatus(`✓ ${rawData.length} registros carregados.`, true);
-    populatePage2Filters();
-    applyFilters();
-  } catch(e) {
-    setStatus('Erro ao carregar planilha. Verifique se está pública.', false);
-    loadDemo();
-  }
+  setStatus('Erro ao carregar planilha. Verifique se está pública.', false);
+  loadDemo();
 }
 
 function setStatus(msg, ok) {
