@@ -701,10 +701,15 @@ function fmt(d) {
 }
 
 function parseDate(str) {
-  if (!str) return null;
+  if (!str || str.trim() === '') return null;
+  str = str.trim();
+  // DD/MM/YYYY
   const p = str.split('/');
-  if (p.length === 3) return new Date(+p[2], +p[1]-1, +p[0]);
-  return new Date(str);
+  if (p.length === 3 && p[2].length === 4) return new Date(+p[2], +p[1]-1, +p[0]);
+  // YYYY-MM-DD
+  const p2 = str.split('-');
+  if (p2.length === 3 && p2[0].length === 4) return new Date(+p2[0], +p2[1]-1, +p2[2]);
+  return null;
 }
 
 // ── FILTERS ──
@@ -733,7 +738,7 @@ function applyFilters() {
 // ── PAGE 1 ──
 function renderPage1() {
   // Ativos = todos com status Ativo no rawData completo (independente do período)
-  const ativos    = rawData.filter(r => r.status && r.status.toLowerCase().includes('ativ')).length;
+  const ativos    = rawData.filter(r => !r.dtdemissao || r.dtdemissao.trim() === '').length;
   // Admissões e demissões apenas dentro do período filtrado
   const admissoes = rawData.filter(r => { const d = parseDate(r.dtadmissao); return d && inRange(d); }).length;
   const demissoes = rawData.filter(r => { const d = parseDate(r.dtdemissao); return d && inRange(d); }).length;
