@@ -638,6 +638,8 @@ async function loadData() {
       if (parsed.length > 0) {
         rawData = parsed;
         setStatus(`✓ ${rawData.length} registros carregados.`, true);
+        // Debug: loga os primeiros registros no console
+        console.log('Amostra dos dados:', JSON.stringify(rawData.slice(0,3)));
         populatePage2Filters();
         applyFilters();
         return;
@@ -738,7 +740,10 @@ function applyFilters() {
 // ── PAGE 1 ──
 function renderPage1() {
   // Ativos = todos com status Ativo no rawData completo (independente do período)
-  const ativos    = rawData.filter(r => !r.dtdemissao || r.dtdemissao.trim() === '').length;
+  const ativos    = rawData.filter(r => {
+    const dem = r.dtdemissao ? r.dtdemissao.trim() : '';
+    return dem === '' || dem === '-' || dem === 'null' || dem === 'undefined';
+  }).length;
   // Admissões e demissões apenas dentro do período filtrado
   const admissoes = rawData.filter(r => { const d = parseDate(r.dtadmissao); return d && inRange(d); }).length;
   const demissoes = rawData.filter(r => { const d = parseDate(r.dtdemissao); return d && inRange(d); }).length;
