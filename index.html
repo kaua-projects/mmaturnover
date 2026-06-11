@@ -678,16 +678,20 @@ function parseCSV(text) {
   };
 
   return lines.slice(1).map(line => {
-    // Parser CSV robusto que respeita campos entre aspas
+    // Parser CSV robusto que respeita campos vazios e aspas
     const vals = [];
     let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') { inQ = !inQ; }
-      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
-      else { cur += c; }
+    for (let i = 0; i <= line.length; i++) {
+      const c = i < line.length ? line[i] : ','; // força último campo
+      if (c === '"') {
+        inQ = !inQ;
+      } else if (c === ',' && !inQ) {
+        vals.push(cur.replace(/^"|"$/g,'').trim());
+        cur = '';
+      } else {
+        cur += c;
+      }
     }
-    vals.push(cur.trim());
 
     const obj = {};
     headers.forEach((h, i) => {
