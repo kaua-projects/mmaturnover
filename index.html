@@ -653,15 +653,49 @@ function setStatus(msg, ok) {
 // ── CSV PARSER ──
 function parseCSV(text) {
   const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim().toLowerCase());
+
+  // Normaliza cabeçalhos: remove acentos, aspas, espaços, lowercase
+  function normalizeKey(s) {
+    return s.replace(/"/g,'').trim()
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/\s+/g,'_');
+  }
+
+  const rawHeaders = lines[0].split(',');
+  const headers = rawHeaders.map(normalizeKey);
+
+  // Mapeamento para nomes internos padrão
+  const keyMap = {
+    'funcionario': 'funcionario',
+    'departamento': 'departamento',
+    'dtadmissao': 'dtadmissao',
+    'genero': 'genero',
+    'dtdemissao': 'dtdemissao',
+    'funcao': 'funcao',
+    'status': 'status',
+    'motivo_desligamento': 'motivo_desligamento',
+  };
+
   return lines.slice(1).map(line => {
-    const vals = line.match(/(".*?"|[^,]+)(?=,|$)/g) || [];
+    // Parser CSV robusto que respeita campos entre aspas
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    vals.push(cur.trim());
+
     const obj = {};
-    headers.forEach((h,i) => {
-      obj[h] = (vals[i]||'').replace(/"/g,'').trim();
+    headers.forEach((h, i) => {
+      const key = keyMap[h] || h;
+      obj[key] = (vals[i] || '').replace(/"/g,'').trim();
     });
     return obj;
-  }).filter(r => r.funcionario || r['funcionário']);
+  }).filter(r => r.funcionario && r.funcionario !== '');
 }
 
 // ── DEMO DATA ──
